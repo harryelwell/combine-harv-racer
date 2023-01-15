@@ -15,6 +15,7 @@ TagManager:
   - RaceTimeUI
   - SFXManager
   - MusicManager
+  - VirtualCamera
   layers:
   - Default
   - TransparentFX

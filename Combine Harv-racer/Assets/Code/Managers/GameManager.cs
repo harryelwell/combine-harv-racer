@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,7 +13,7 @@ public class GameManager : MonoBehaviour
     public SoundFXManager soundFXManager;
     public AudioSource musicManager;
     public GameObject trafficLights;
-    public SpriteRenderer trafficLightsSprite;
+    public Image trafficLightsSprite;
     [Header("Gameplay Parameters")]
     public bool raceStarted;
     [Header("Checkpoint Tracking")]

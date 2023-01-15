@@ -30,6 +30,7 @@ public class PlayerManager : MonoBehaviour
         {
             gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         }
+
     }
 
     void OnEnable()
@@ -58,12 +59,12 @@ public class PlayerManager : MonoBehaviour
     {
         if(gameManager.raceStarted == true && movementAllowed == true)
         {
-            PlayerVelocityAcceleration();
-            PlayerVelocityRotation();
+            PlayerAcceleration();
+            PlayerRotation();
         }
     }
 
-    void PlayerVelocityAcceleration()
+    void PlayerAcceleration()
     {
         float calculatedPlayerSpeed = playerSpeed * (1 + cornValue);
         //Debug.Log($"cornValue is {cornValue}, playerSpeed is {playerSpeed}, calculatedPlayerSpeed {calculatedPlayerSpeed}");
@@ -84,7 +85,7 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    void PlayerVelocityRotation()
+    void PlayerRotation()
     {
         float turnValue = playerActions.PlayerMap.Turn.ReadValue<float>();
 
@@ -128,7 +129,5 @@ public class PlayerManager : MonoBehaviour
             transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,zRotation);
             yield return null;
         }
-
-        //transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,startRotation);
     }
 }
