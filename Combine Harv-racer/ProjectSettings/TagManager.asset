@@ -16,6 +16,8 @@ TagManager:
   - SFXManager
   - MusicManager
   - VirtualCamera
+  - CameraTracker
+  - CameraLock
   layers:
   - Default
   - TransparentFX

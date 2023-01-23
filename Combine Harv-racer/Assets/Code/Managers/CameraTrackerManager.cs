@@ -1,23 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cinemachine;
 
 public class CameraTrackerManager : MonoBehaviour
 {
     public GameObject player;
     public PlayerManager playerManager;
+    public GameObject cameraLock;
+    public CinemachineTargetGroup targetGroup;
+    public float targetGroupRadius;
+    public float radiusModifier;
+
     // Start is called before the first frame update
-    // public float startingDistance;
-    // public float calculatedDistance;
-    public float minDistance;
-    public float maxDistance;
-    public float distanceScale;
-    public float lerpSpeed;
-    public Vector3 velocity;
-    public Vector3 motionVector;
-    public float motionMagnitude;
-    public Vector3 targetPosition;
-    public Vector3 calculatedPosition;
     void Start()
     {
         if(player == null || playerManager == null)
@@ -26,38 +21,38 @@ public class CameraTrackerManager : MonoBehaviour
             playerManager = player.GetComponent<PlayerManager>();
         }
 
-        // if (startingDistance == 0)
-        // {
-        //     startingDistance = 4f;
-        // }
-
+        targetGroup.m_Targets[0].radius = targetGroupRadius;
     }
 
     // Update is called once per frame
     void Update()
     {
-        CalculateTargetPosition();
-    }
-    
-    public void CalculateTargetPosition()
-    {
-        // calculatedDistance = startingDistance + (playerManager.cornValue * 1.2f);
-
-        // Vector3 targetPosition = new Vector3(player.transform.position.x,player.transform.position.y + calculatedDistance,0);
-
-        // SetTargetPosition(targetPosition);
-
-        velocity = playerManager.playerRigidbody.velocity;
-        motionVector = velocity.normalized;
-        motionMagnitude = velocity.magnitude;
-        targetPosition = motionVector*(Mathf.Max(minDistance,Mathf.Min(maxDistance,motionMagnitude) * distanceScale));
-        calculatedPosition = player.transform.position + targetPosition;
-
-        SetTargetPosition();
+        CalculateRadius();
     }
 
-    public void SetTargetPosition()
+    public void LockCamera()
     {
-        transform.position = Vector3.Lerp(transform.position, calculatedPosition, lerpSpeed * Time.fixedDeltaTime);
+        // Set the position of the CameraLock to the current camera position
+        cameraLock.transform.position = transform.position;
+
+        // Tell cinemachine to follow the cameralock
+        targetGroup.AddMember(cameraLock.transform,1f,targetGroupRadius + radiusModifier);
+        targetGroup.RemoveMember(transform);
+    }
+
+    public void UnlockCamera()
+    {
+        // Tell the cinemachine to look back at the cameraTracker again
+        targetGroup.AddMember(transform,1f,targetGroupRadius + radiusModifier);
+        targetGroup.RemoveMember(cameraLock.transform);
+    }
+
+    public void CalculateRadius()
+    {
+        // radius mofidier += 0.25f for every 0.5f of cornValue
+        radiusModifier = 0.25f * Mathf.Floor(playerManager.cornValue/0.5f);
+
+        // radius of targetGroup member = targetGroupRadius + radiusModifier
+        targetGroup.m_Targets[0].radius = targetGroupRadius + radiusModifier;
     }
 }

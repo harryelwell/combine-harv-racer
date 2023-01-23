@@ -9,6 +9,7 @@ public class PlayerManager : MonoBehaviour
     public GameManager gameManager;
     public PlayerActions playerActions;
     public Rigidbody2D playerRigidbody;
+    public CameraTrackerManager cameraTracker;
     [Header("Player Settings")]
     public float playerSpeed;
     public float turnSpeed;
@@ -20,15 +21,19 @@ public class PlayerManager : MonoBehaviour
     {
         playerActions = new PlayerActions();
 
-        playerRigidbody = GetComponent<Rigidbody2D>();
         if (playerRigidbody == null)
         {
-            Debug.Log("Rigidbody2D is null!");
+            playerRigidbody = GetComponent<Rigidbody2D>();
         }
 
         if (gameManager == null)
         {
             gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
+        }
+
+        if (cameraTracker == null)
+        {
+            cameraTracker  = GameObject.FindGameObjectWithTag("CameraTracker").GetComponent<CameraTrackerManager>();
         }
 
     }
@@ -104,13 +109,18 @@ public class PlayerManager : MonoBehaviour
     {
         movementAllowed = false;
 
-        //trigger spining in a circle twice
+        // trigger spining in a circle twice
         StartCoroutine(SpinOut());
+
+        // trigger camera lock
+        //StartCoroutine(cameraTracker.LockPosition(2.5f));
+        cameraTracker.LockCamera();
 
         yield return new WaitForSeconds(3f);
 
         Debug.Log("Start moving again!");
         movementAllowed = true;
+        cameraTracker.UnlockCamera();
 
         Destroy(cow);
     }

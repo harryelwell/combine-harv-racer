@@ -34,7 +34,7 @@ public class LapCountUIManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(gameManager.lapCount > gameManager.totalLaps)
+        if(gameManager.lapCount >= gameManager.totalLaps)
         {
             calculatedLapCount = gameManager.totalLaps;
         }
