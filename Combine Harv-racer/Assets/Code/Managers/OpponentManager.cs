@@ -8,12 +8,25 @@ public class OpponentManager : MonoBehaviour
     public GameManager gameManager;
     public PlayerActions playerActions;
     public Rigidbody2D playerRigidbody;
+    public GameObject castStartPoint;
+
     [Header("Player Settings")]
     public float playerSpeed;
     public float turnSpeed;
     public float cornValue; // min 0, max 3 (+0.3 each time you hit corn)
+
+    [Header("Automated Input Values")]
+    public float accelerationValue;
+    public float turnValue;
+
     [Header("Gameplay Parameters")]
     public bool movementAllowed;
+    public bool needToReverse;
+
+    [Header("Checkpoint Tracking")]
+    public float targetCheckpointNumber;
+    public GameObject targetCheckpoint;
+    public int lapsComplete;
     
     // Start is called before the first frame update
     void Start()
@@ -28,6 +41,8 @@ public class OpponentManager : MonoBehaviour
         {
             gameManager = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameManager>();
         }
+
+        SetTargetCheckpoint();
     }
 
     // Update is called once per frame
@@ -40,46 +55,144 @@ public class OpponentManager : MonoBehaviour
     {
         if(gameManager.raceStarted == true && movementAllowed == true)
         {
-            //PlayerVelocityAcceleration();
-            //PlayerVelocityRotation();
+            SetInputAcceleration();
+            SetInputTurning();
+            PlayerAcceleration();
+            PlayerRotation();
         }
     }
 
-    // void PlayerVelocityAcceleration()
-    // {
-    //     float calculatedPlayerSpeed = playerSpeed * (1 + cornValue);
-    //     //Debug.Log($"cornValue is {cornValue}, playerSpeed is {playerSpeed}, calculatedPlayerSpeed {calculatedPlayerSpeed}");
+    void SetInputAcceleration()
+    {
+        if(needToReverse == false)
+        {
+            accelerationValue = 1f;
+        }
+        else if(needToReverse == true)
+        {
+            accelerationValue = -1f;
+        }
+        else
+        {
+            accelerationValue = 0;
+        }
+    }
 
-    //     float accelerationValue = playerActions.PlayerMap.Accelerate.ReadValue<float>();
+    void SetInputTurning()
+    {
+        turnValue = 0;
 
-    //     if(accelerationValue > 0f)
-    //     {
-    //         playerRigidbody.velocity = transform.up * calculatedPlayerSpeed * Time.fixedDeltaTime;
-    //     }
-    //     else if(accelerationValue < 0f)
-    //     {
-    //         playerRigidbody.velocity = -transform.up * (calculatedPlayerSpeed * 0.5f) * Time.fixedDeltaTime;
-    //     }
-    //     else
-    //     {
-    //         //Debug.Log($"No clear acceleration input, do nothing!");
-    //     }
-    // }
+        // Turn towards checkpoint
 
-    // void PlayerVelocityRotation()
-    // {
-    //     float turnValue = playerActions.PlayerMap.Turn.ReadValue<float>();
+        Vector3 checkpointDirectionLocal = transform.InverseTransformPoint(targetCheckpoint.transform.position);
 
-    //     float calculatedTurnValue = turnValue;
-    //     if(playerActions.PlayerMap.Accelerate.ReadValue<float>() == -1f)
-    //     {
-    //         calculatedTurnValue = -turnValue;
-    //     }
+                if(checkpointDirectionLocal.x < -0.1f)
+                {
+                    //Debug.Log($"{targetCheckpoint.name} is on the left of {transform.name}");
+                    turnValue = 1;
+                }
 
-    //     calculatedTurnValue *= (1 + (cornValue * 0.15f));
+                if(checkpointDirectionLocal.x > 0.1f)
+                {
+                    //Debug.Log($"{targetCheckpoint.name} is on the right of {transform.name}");
+                    turnValue = -1;
+                }
 
-    //     transform.Rotate(0,0,calculatedTurnValue * turnSpeed * Time.fixedDeltaTime);
-    // }
+        // Check for blockers in path
+
+        Debug.DrawLine(castStartPoint.transform.position,targetCheckpoint.transform.position,Color.cyan);
+        RaycastHit2D checkpointPathCheck = Physics2D.Linecast(castStartPoint.transform.position,targetCheckpoint.transform.position);
+
+        if(checkpointPathCheck.collider != null)
+        {            
+            //Debug.Log($"{checkpointPathCheck.collider.name} blocking path to {targetCheckpoint.name}");
+
+            if(checkpointPathCheck.collider.tag == "Player" || checkpointPathCheck.collider.tag == "Harvester" || checkpointPathCheck.collider.tag == "Cow" || checkpointPathCheck.collider.tag == "Opponent")
+            {
+                Vector3 blockerDirectionLocal = transform.InverseTransformPoint(checkpointPathCheck.collider.transform.position);
+
+                if(blockerDirectionLocal.x < 0)
+                {
+                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the left of {transform.name}");
+                    turnValue = -1;
+                }
+
+                if(blockerDirectionLocal.x > 0)
+                {
+                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the right of {transform.name}");
+                    turnValue = 1;
+                }
+            }
+
+            // readjust for walls
+
+            if(checkpointPathCheck.collider.tag == "Wall")
+            {
+                Vector3 blockerDirectionLocal = transform.InverseTransformPoint(checkpointPathCheck.collider.transform.position);
+
+                if(blockerDirectionLocal.x < 0)
+                {
+                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the left of {transform.name}");
+                    turnValue = -1;
+                }
+
+                if(blockerDirectionLocal.x > 0)
+                {
+                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the right of {transform.name}");
+                    turnValue = 1;
+                }
+            }
+        }
+    }
+
+    void PlayerAcceleration()
+    {
+        float calculatedPlayerSpeed = playerSpeed * (1 + cornValue);
+        //Debug.Log($"cornValue is {cornValue}, playerSpeed is {playerSpeed}, calculatedPlayerSpeed {calculatedPlayerSpeed}");
+
+        if(accelerationValue > 0f)
+        {
+            playerRigidbody.velocity = transform.up * calculatedPlayerSpeed * Time.fixedDeltaTime;
+        }
+        else if(accelerationValue < 0f)
+        {
+            playerRigidbody.velocity = -transform.up * (calculatedPlayerSpeed * 0.5f) * Time.fixedDeltaTime;
+        }
+        else
+        {
+            //Debug.Log($"No clear acceleration input, do nothing!");
+        }
+    }
+
+    void PlayerRotation()
+    {
+        float calculatedTurnValue = turnValue;
+        if(accelerationValue == -1f)
+        {
+            calculatedTurnValue = -turnValue;
+        }
+
+        calculatedTurnValue *= (1 + (cornValue * 0.15f));
+
+        transform.Rotate(0,0,calculatedTurnValue * turnSpeed * Time.fixedDeltaTime);
+    }
+
+    public void SetTargetCheckpoint()
+    {
+        GameObject[] checkpoints = GameObject.FindGameObjectsWithTag("Checkpoint");
+        //Debug.Log($"Checkpoint count: {checkpoints.Length}");
+        if(targetCheckpointNumber == checkpoints.Length)
+        {
+            targetCheckpointNumber = 0;
+            //lapsComplete += 1; << THIS NEEDS TO BE IN A SEPARATE THING FOR CROSSING CHECKPOINT 1
+
+            // Check whether lapsComplete == totalLaps in GameManager
+            // Mark position at race end if so
+        }
+
+        targetCheckpointNumber += 1;
+        targetCheckpoint = GameObject.Find($"Checkpoint {targetCheckpointNumber}");
+    }
 
     public IEnumerator CowCollision(GameObject cow)
     {
@@ -112,5 +225,26 @@ public class OpponentManager : MonoBehaviour
         }
 
         //transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,startRotation);
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        StopCoroutine(StopReversing());
+        
+        if(col.gameObject.tag == "Player" || col.gameObject.tag == "Harvester" || col.gameObject.tag == "Opponent" || col.gameObject.tag == "Wall")
+        {
+            needToReverse = true;
+            Debug.Log($"{transform.name} started reversing.");
+            StartCoroutine(StopReversing());
+        }
+    }
+
+    IEnumerator StopReversing()
+    {   
+        yield return new WaitForSeconds(1.5f);
+
+        Debug.Log($"{transform.name} stopping reversing.");
+
+        needToReverse = false;
     }
 }

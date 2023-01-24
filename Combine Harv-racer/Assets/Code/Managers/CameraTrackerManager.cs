@@ -55,4 +55,12 @@ public class CameraTrackerManager : MonoBehaviour
         // radius of targetGroup member = targetGroupRadius + radiusModifier
         targetGroup.m_Targets[0].radius = targetGroupRadius + radiusModifier;
     }
+
+    // NOTE FOR FUTURE HARRY:
+    // A better system -
+
+    // Separate trackers that sit as children of the main Player GameObject
+    // One for each tier of corn value, each is a bit further away and has a slightly bigger radius to compensate  the player view
+
+    // THIS IS THE WAY!
 }

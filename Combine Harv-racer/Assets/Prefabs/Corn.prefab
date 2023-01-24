@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4310513109469824726}
   - component: {fileID: 4310513109469824720}
   - component: {fileID: 4310513109469824723}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Corn
   m_TagString: Corn
   m_Icon: {fileID: 0}
@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 4310513109892758921}
   - component: {fileID: 4310513109892758923}
   - component: {fileID: 4310513109892758920}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Corn Particle
   m_TagString: Untagged
   m_Icon: {fileID: 0}

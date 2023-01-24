@@ -88,6 +88,30 @@ public class CornManager : MonoBehaviour
             // Start growing from scratch again
             SetCornlevel(0);
         }
+
+        if(col.gameObject.tag == "Opponent" && cornLevel >= 2)
+        {
+            OpponentManager opponentManager = col.gameObject.GetComponent<OpponentManager>();
+
+            // Stop any corn growth
+            StopAllCoroutines();
+
+            if(cornLevel == 2 && opponentManager.cornValue < 4.4f)
+            {
+                opponentManager.cornValue += 0.0015f;
+            }
+
+            if(cornLevel == 3 && opponentManager.cornValue < 4.4f)
+            {
+                opponentManager.cornValue += 0.004f;
+            }
+
+            // Trigger particle
+            cornParticle.Play();
+            
+            // Start growing from scratch again
+            SetCornlevel(0);
+        }
     }
 
     IEnumerator GrowCorn()

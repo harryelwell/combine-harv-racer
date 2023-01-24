@@ -138,6 +138,14 @@ public class GameManager : MonoBehaviour
             player.GetComponent<PlayerManager>().movementAllowed = true;
         }
 
+        // Set movementAllowed to true for each player
+        GameObject[] opponents = GameObject.FindGameObjectsWithTag("Opponent");
+
+        foreach(GameObject opponent in opponents)
+        {
+            opponent.GetComponent<OpponentManager>().movementAllowed = true;
+        }
+
         yield return new WaitForSeconds(1);
 
         Destroy(trafficLights);

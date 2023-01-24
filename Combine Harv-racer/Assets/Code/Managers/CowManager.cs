@@ -61,5 +61,34 @@ public class CowManager : MonoBehaviour
 
             cowTriggered = true;
         }
+
+        if(col.gameObject.tag == "Opponent" && cowTriggered == false)
+        {
+            OpponentManager opponentManager = col.gameObject.GetComponent<OpponentManager>();
+
+            // Hide the cow
+            this.GetComponent<SpriteRenderer>().color = new Color(1f,1f,1f,0f);
+
+            StartCoroutine(opponentManager.CowCollision(this.gameObject));
+
+            if(opponentManager.cornValue > 2f)
+            {
+                opponentManager.cornValue -= 2f;
+            }
+            else
+            {
+                opponentManager.cornValue = 0f;
+            }
+
+            // Trigger particle
+            cowParticle.Play();
+
+            soundFXManager.cowHit.Play();
+
+            // Start the Cow Zone coroutine to start spawning a new cow
+            cowZoneManager.StartSpawnTimer();
+
+            cowTriggered = true;
+        }
     }
 }

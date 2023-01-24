@@ -18,6 +18,8 @@ TagManager:
   - VirtualCamera
   - CameraTracker
   - CameraLock
+  - Opponent
+  - Wall
   layers:
   - Default
   - TransparentFX
