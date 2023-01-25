@@ -8,12 +8,19 @@ public class OpponentManager : MonoBehaviour
     public GameManager gameManager;
     public PlayerActions playerActions;
     public Rigidbody2D playerRigidbody;
+
+    [Header("Casting Objects")]
     public GameObject castStartPoint;
+    public GameObject castFrontLeft;
+    public GameObject castFrontRight;
+    public GameObject castCheckLeft;
+    public GameObject castCheckRight;
 
     [Header("Player Settings")]
     public float playerSpeed;
     public float turnSpeed;
     public float cornValue; // min 0, max 3 (+0.3 each time you hit corn)
+    public float raycastDistance;
 
     [Header("Automated Input Values")]
     public float accelerationValue;
@@ -26,6 +33,7 @@ public class OpponentManager : MonoBehaviour
     [Header("Checkpoint Tracking")]
     public float targetCheckpointNumber;
     public GameObject targetCheckpoint;
+    public GameObject nearestTargetZone;
     public int lapsComplete;
     
     // Start is called before the first frame update
@@ -82,17 +90,20 @@ public class OpponentManager : MonoBehaviour
     {
         turnValue = 0;
 
-        // Turn towards checkpoint
+        // Set a target zone of the current targetCheckpoint
+        SetTargetZone();
 
-        Vector3 checkpointDirectionLocal = transform.InverseTransformPoint(targetCheckpoint.transform.position);
+        // Turn towards targetZone
 
-                if(checkpointDirectionLocal.x < -0.1f)
+        Vector3 zoneDirectionLocal = transform.InverseTransformPoint(nearestTargetZone.transform.position);
+
+                if(zoneDirectionLocal.x < -0.1f)
                 {
                     //Debug.Log($"{targetCheckpoint.name} is on the left of {transform.name}");
                     turnValue = 1;
                 }
 
-                if(checkpointDirectionLocal.x > 0.1f)
+                if(zoneDirectionLocal.x > 0.1f)
                 {
                     //Debug.Log($"{targetCheckpoint.name} is on the right of {transform.name}");
                     turnValue = -1;
@@ -100,48 +111,147 @@ public class OpponentManager : MonoBehaviour
 
         // Check for blockers in path
 
-        Debug.DrawLine(castStartPoint.transform.position,targetCheckpoint.transform.position,Color.cyan);
-        RaycastHit2D checkpointPathCheck = Physics2D.Linecast(castStartPoint.transform.position,targetCheckpoint.transform.position);
+        //Vector3 leftCastDirection = (castStartPoint.transform.forward - castStartPoint.transform.right).normalized;
 
-        if(checkpointPathCheck.collider != null)
+        //Vector3 rightCastDirection = (castStartPoint.transform.forward + castStartPoint.transform.right).normalized;
+
+        Debug.DrawRay(castStartPoint.transform.position,castStartPoint.transform.forward*raycastDistance,Color.cyan);
+        RaycastHit2D checkpointPathCheck = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance);
+        
+        Debug.DrawRay(castFrontLeft.transform.position,castFrontLeft.transform.forward*(raycastDistance*0.8f),Color.cyan);
+        RaycastHit2D checkpointPathCheckL = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance*0.8f);
+
+        Debug.DrawRay(castFrontRight.transform.position,castFrontRight.transform.forward*(raycastDistance*0.8f),Color.cyan);
+        RaycastHit2D checkpointPathCheckR = Physics2D.Raycast(castFrontRight.transform.position,castFrontRight.transform.forward,raycastDistance*0.8f);
+
+        if(checkpointPathCheck.collider != null || checkpointPathCheckL.collider != null || checkpointPathCheckR.collider != null)
         {            
             //Debug.Log($"{checkpointPathCheck.collider.name} blocking path to {targetCheckpoint.name}");
 
-            if(checkpointPathCheck.collider.tag == "Player" || checkpointPathCheck.collider.tag == "Harvester" || checkpointPathCheck.collider.tag == "Cow" || checkpointPathCheck.collider.tag == "Opponent")
-            {
-                Vector3 blockerDirectionLocal = transform.InverseTransformPoint(checkpointPathCheck.collider.transform.position);
+            // Check left using raycast
+                Debug.DrawRay(castCheckLeft.transform.position,castCheckLeft.transform.forward*(raycastDistance*0.8f),Color.yellow);
+                RaycastHit2D leftBlockerCheck = Physics2D.Raycast(castCheckLeft.transform.position,castCheckLeft.transform.forward,raycastDistance*0.8f);
 
-                if(blockerDirectionLocal.x < 0)
+                // Check right using raycast
+                Debug.DrawRay(castCheckRight.transform.position,castCheckRight.transform.forward*(raycastDistance*0.8f),Color.green);
+                RaycastHit2D rightBlockerCheck = Physics2D.Raycast(castCheckRight.transform.position,castCheckRight.transform.forward,raycastDistance*0.8f);
+
+                // If BOTH empty - go whichever direction the checkpoint targetZone is in
+                if(leftBlockerCheck.collider == null && rightBlockerCheck.collider == null)
                 {
-                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the left of {transform.name}");
+                    Debug.Log("Both sides clear, go in the direction of the targetZone.");
+
+                    if(zoneDirectionLocal.x < -0.1f)
+                    {
+                        turnValue = 1;
+                    }
+
+                    if(zoneDirectionLocal.x > 0.1f)
+                    {
+                        turnValue = -1;
+                    }
+                }
+
+                // If LEFT empty && RIGHT blocked - go left
+                if(leftBlockerCheck.collider == null && rightBlockerCheck.collider != null)
+                {
+                    Debug.Log("Left side is clear, go left.");
+                    turnValue = 1;
+                }
+
+                // If RIGHT empty && LEFT blocked - go right
+                if(leftBlockerCheck.collider != null && rightBlockerCheck.collider == null)
+                {
+                    Debug.Log("Right side is clear, go right.");
                     turnValue = -1;
                 }
 
-                if(blockerDirectionLocal.x > 0)
+                // If BOTH blocked, check if one contains a cow, prioritise the one without a cow
+                if(leftBlockerCheck.collider != null && rightBlockerCheck.collider != null)
                 {
-                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the right of {transform.name}");
-                    turnValue = 1;
+                    Debug.Log("Both sides blocked, go in the least nasty direction.");
+
+                    // avoid players first
+                    if(leftBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent" || rightBlockerCheck.collider.tag == "Opponent")
+                    {
+                        if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Opponent"))
+                        {
+                            if(zoneDirectionLocal.x < -0.1f)
+                            {
+                                turnValue = 1;
+                            }
+
+                            if(zoneDirectionLocal.x > 0.1f)
+                            {
+                                turnValue = -1;
+                            }
+                        }
+                        else if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag != "Player" || rightBlockerCheck.collider.tag != "Opponent"))
+                        {
+                            // turn left
+                            turnValue = 1;
+                        }
+                        else
+                        {
+                            // turn right
+                            turnValue = -1;
+                        }
+                    }
+
+                    // then prioritise avoiding cows if required
+                    if(leftBlockerCheck.collider.tag == "Cow" || rightBlockerCheck.collider.tag == "Cow")
+                    {
+                        if(leftBlockerCheck.collider.tag == "Cow" && rightBlockerCheck.collider.tag == "Cow")
+                        {
+                            if(zoneDirectionLocal.x < -0.1f)
+                            {
+                                turnValue = 1;
+                            }
+
+                            if(zoneDirectionLocal.x > 0.1f)
+                            {
+                                turnValue = -1;
+                            }
+                        }
+                        else if(leftBlockerCheck.collider.tag == "Cow")
+                        {
+                            // turn left
+                            turnValue = 1;
+                        }
+                        else
+                        {
+                            // turn right
+                            turnValue = -1;
+                        }
+                    }
+
+                    // then prioritise avoiding walls if required
+                    if(leftBlockerCheck.collider.tag == "Wall" || rightBlockerCheck.collider.tag == "Wall")
+                    {
+                        if(leftBlockerCheck.collider.tag == "Wall" && rightBlockerCheck.collider.tag == "Wall")
+                        {
+                            if(zoneDirectionLocal.x < -0.1f)
+                            {
+                                turnValue = 1;
+                            }
+
+                            if(zoneDirectionLocal.x > 0.1f)
+                            {
+                                turnValue = -1;
+                            }
+                        }
+                        else if(leftBlockerCheck.collider.tag == "Wall")
+                        {
+                            // turn left
+                            turnValue = 1;
+                        }
+                        else
+                        {
+                            // turn right
+                            turnValue = -1;
+                        }
+                    }
                 }
-            }
-
-            // readjust for walls
-
-            if(checkpointPathCheck.collider.tag == "Wall")
-            {
-                Vector3 blockerDirectionLocal = transform.InverseTransformPoint(checkpointPathCheck.collider.transform.position);
-
-                if(blockerDirectionLocal.x < 0)
-                {
-                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the left of {transform.name}");
-                    turnValue = -1;
-                }
-
-                if(blockerDirectionLocal.x > 0)
-                {
-                    //Debug.Log($"{checkpointPathCheck.collider.name} is on the right of {transform.name}");
-                    turnValue = 1;
-                }
-            }
         }
     }
 
@@ -194,6 +304,30 @@ public class OpponentManager : MonoBehaviour
         targetCheckpoint = GameObject.Find($"Checkpoint {targetCheckpointNumber}");
     }
 
+    void SetTargetZone()
+    {
+        Transform[] checkpointZones = targetCheckpoint.GetComponentsInChildren<Transform>();
+        //Debug.Log($"Child count: {checkpointZones.Length}");
+
+        GameObject targetZone = null;
+        float targetZoneDistance = 0;
+
+        foreach(Transform zone in checkpointZones)
+        {
+            float distance = Vector3.Distance(transform.position,zone.transform.position);
+            //Debug.Log($"{transform.name} distance from {zone.transform.name} is {distance}.");
+
+            if(targetZoneDistance == 0 || targetZoneDistance > distance)
+            {
+                targetZone = zone.gameObject;
+                targetZoneDistance = distance;
+            }
+        }
+
+        // output the targetZone
+        nearestTargetZone = targetZone;
+    }
+
     public IEnumerator CowCollision(GameObject cow)
     {
         movementAllowed = false;
@@ -227,17 +361,28 @@ public class OpponentManager : MonoBehaviour
         //transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,startRotation);
     }
 
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        StopCoroutine(StopReversing());
+    // void OnCollisionEnter2D(Collision2D col)
+    // {
+    //     StopCoroutine(StopReversing());
         
-        if(col.gameObject.tag == "Player" || col.gameObject.tag == "Harvester" || col.gameObject.tag == "Opponent" || col.gameObject.tag == "Wall")
-        {
-            needToReverse = true;
-            Debug.Log($"{transform.name} started reversing.");
-            StartCoroutine(StopReversing());
-        }
-    }
+    //     if(col.gameObject.tag == "Player" || col.gameObject.tag == "Harvester" || col.gameObject.tag == "Opponent" || col.gameObject.tag == "Wall")
+    //     {
+            
+    //         // if raycast forward and see the collision object, do the below
+    //         Debug.DrawLine(castStartPoint.transform.position,castStartPoint.transform.forward*300f,Color.red);
+    //         RaycastHit2D checkInfront = Physics2D.Raycast(castStartPoint.transform.position,castStartPoint.transform.forward,2f);
+
+    //         if(checkInfront.collider != null)
+    //         {
+    //             if(checkInfront.collider.tag == "Player" || checkInfront.collider.tag == "Harvester" || checkInfront.collider.tag == "Opponent" || checkInfront.collider.tag == "Wall")
+    //             {
+    //                 needToReverse = true;
+    //                 Debug.Log($"{transform.name} started reversing.");
+    //                 StartCoroutine(StopReversing());
+    //             }
+    //         } 
+    //     }
+    // }
 
     IEnumerator StopReversing()
     {   
