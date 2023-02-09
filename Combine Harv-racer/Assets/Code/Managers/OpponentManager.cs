@@ -26,6 +26,8 @@ public class OpponentManager : MonoBehaviour
     public float accelerationValue;
     public float turnValue;
 
+    public int dodgeValue;
+
     [Header("Gameplay Parameters")]
     public bool movementAllowed;
     public bool needToReverse;
@@ -126,134 +128,194 @@ public class OpponentManager : MonoBehaviour
 
         if(checkpointPathCheck.collider != null || checkpointPathCheckL.collider != null || checkpointPathCheckR.collider != null)
         {            
-            //Debug.Log($"{checkpointPathCheck.collider.name} blocking path to {targetCheckpoint.name}");
+            //OldAvoidCollision()
 
-            // Check left using raycast
-                Debug.DrawRay(castCheckLeft.transform.position,castCheckLeft.transform.forward*(raycastDistance*0.8f),Color.yellow);
-                RaycastHit2D leftBlockerCheck = Physics2D.Raycast(castCheckLeft.transform.position,castCheckLeft.transform.forward,raycastDistance*0.8f);
+            // Figure out which check got a collision
+            Collider2D obstacle = checkpointPathCheck.collider;
 
-                // Check right using raycast
-                Debug.DrawRay(castCheckRight.transform.position,castCheckRight.transform.forward*(raycastDistance*0.8f),Color.green);
-                RaycastHit2D rightBlockerCheck = Physics2D.Raycast(castCheckRight.transform.position,castCheckRight.transform.forward,raycastDistance*0.8f);
+            if(checkpointPathCheckL.collider != null)
+            {
+                obstacle = checkpointPathCheckL.collider;
+            }
 
-                // If BOTH empty - go whichever direction the checkpoint targetZone is in
-                if(leftBlockerCheck.collider == null && rightBlockerCheck.collider == null)
-                {
-                    Debug.Log("Both sides clear, go in the direction of the targetZone.");
+            if(checkpointPathCheckR.collider != null)
+            {
+                obstacle = checkpointPathCheckR.collider;
+            }
 
-                    if(zoneDirectionLocal.x < -0.1f)
-                    {
-                        turnValue = 1;
-                    }
+            if(checkpointPathCheck.collider != null)
+            {
+                obstacle = checkpointPathCheck.collider;
+            }
 
-                    if(zoneDirectionLocal.x > 0.1f)
-                    {
-                        turnValue = -1;
-                    }
-                }
-
-                // If LEFT empty && RIGHT blocked - go left
-                if(leftBlockerCheck.collider == null && rightBlockerCheck.collider != null)
-                {
-                    Debug.Log("Left side is clear, go left.");
-                    turnValue = 1;
-                }
-
-                // If RIGHT empty && LEFT blocked - go right
-                if(leftBlockerCheck.collider != null && rightBlockerCheck.collider == null)
-                {
-                    Debug.Log("Right side is clear, go right.");
-                    turnValue = -1;
-                }
-
-                // If BOTH blocked, check if one contains a cow, prioritise the one without a cow
-                if(leftBlockerCheck.collider != null && rightBlockerCheck.collider != null)
-                {
-                    Debug.Log("Both sides blocked, go in the least nasty direction.");
-
-                    // avoid players first
-                    if(leftBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent" || rightBlockerCheck.collider.tag == "Opponent")
-                    {
-                        if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Opponent"))
-                        {
-                            if(zoneDirectionLocal.x < -0.1f)
-                            {
-                                turnValue = 1;
-                            }
-
-                            if(zoneDirectionLocal.x > 0.1f)
-                            {
-                                turnValue = -1;
-                            }
-                        }
-                        else if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag != "Player" || rightBlockerCheck.collider.tag != "Opponent"))
-                        {
-                            // turn left
-                            turnValue = 1;
-                        }
-                        else
-                        {
-                            // turn right
-                            turnValue = -1;
-                        }
-                    }
-
-                    // then prioritise avoiding cows if required
-                    if(leftBlockerCheck.collider.tag == "Cow" || rightBlockerCheck.collider.tag == "Cow")
-                    {
-                        if(leftBlockerCheck.collider.tag == "Cow" && rightBlockerCheck.collider.tag == "Cow")
-                        {
-                            if(zoneDirectionLocal.x < -0.1f)
-                            {
-                                turnValue = 1;
-                            }
-
-                            if(zoneDirectionLocal.x > 0.1f)
-                            {
-                                turnValue = -1;
-                            }
-                        }
-                        else if(leftBlockerCheck.collider.tag == "Cow")
-                        {
-                            // turn left
-                            turnValue = 1;
-                        }
-                        else
-                        {
-                            // turn right
-                            turnValue = -1;
-                        }
-                    }
-
-                    // then prioritise avoiding walls if required
-                    if(leftBlockerCheck.collider.tag == "Wall" || rightBlockerCheck.collider.tag == "Wall")
-                    {
-                        if(leftBlockerCheck.collider.tag == "Wall" && rightBlockerCheck.collider.tag == "Wall")
-                        {
-                            if(zoneDirectionLocal.x < -0.1f)
-                            {
-                                turnValue = 1;
-                            }
-
-                            if(zoneDirectionLocal.x > 0.1f)
-                            {
-                                turnValue = -1;
-                            }
-                        }
-                        else if(leftBlockerCheck.collider.tag == "Wall")
-                        {
-                            // turn left
-                            turnValue = 1;
-                        }
-                        else
-                        {
-                            // turn right
-                            turnValue = -1;
-                        }
-                    }
-                }
+            if (obstacle != null)
+            {
+                Vector2 vectorToTarget = nearestTargetZone.transform.position - transform.position;
+                vectorToTarget.Normalize();
+                AvoidCollision(vectorToTarget, out vectorToTarget, obstacle);
+            }
+            
         }
     }
+
+    void AvoidCollision(Vector2 vectorToTarget, out Vector2 newVectorToTarget, Collider2D obstacle)
+    {
+        // ADAPT CODE FROM https://www.youtube.com/watch?v=5SJ6AAI6Wcs&ab_channel=PrettyFlyGames
+
+        Vector2 avoidanceVector = Vector2.zero;
+        
+        // Calculate the reflecting vector if we were to hit the obstacle
+        avoidanceVector = Vector2.Reflect((obstacle.gameObject.transform.position - transform.position).normalized, obstacle.transform.right);
+
+        // Avoidance vector
+        newVectorToTarget = avoidanceVector;
+        newVectorToTarget.Normalize();
+
+        // Draw the avoidance vector
+        Debug.DrawRay(transform.position, avoidanceVector * raycastDistance, Color.green);
+
+        // Log the avoidanceVector
+        Debug.Log($"{transform.name} avoidanceVector.x: {avoidanceVector.x}, avoidanceVector.y: {avoidanceVector.y}");
+
+        // NEXT STEP: Interpret the avoidanceVector into turnValue!
+        turnValue = -avoidanceVector.x;
+    }
+
+    // void OldAvoidCollision()
+    // {
+    //     //Debug.Log($"{checkpointPathCheck.collider.name} blocking path to {targetCheckpoint.name}");
+
+    //     // Check left using raycast
+    //     Debug.DrawRay(castCheckLeft.transform.position,castCheckLeft.transform.forward*(raycastDistance*0.8f),Color.yellow);
+    //     RaycastHit2D leftBlockerCheck = Physics2D.Raycast(castCheckLeft.transform.position,castCheckLeft.transform.forward,raycastDistance*0.8f);
+
+    //     // Check right using raycast
+    //     Debug.DrawRay(castCheckRight.transform.position,castCheckRight.transform.forward*(raycastDistance*0.8f),Color.green);
+    //     RaycastHit2D rightBlockerCheck = Physics2D.Raycast(castCheckRight.transform.position,castCheckRight.transform.forward,raycastDistance*0.8f);
+
+    //     // If BOTH empty - go any direction
+    //     if(leftBlockerCheck.collider == null && rightBlockerCheck.collider == null)
+    //     {
+    //         Debug.Log($"{transform.name} Both sides clear, go either way.");
+
+    //         if(dodgeValue == 0)
+    //         {
+    //             dodgeValue = Random.Range(1,3);
+    //         }
+    //         Debug.Log($"{transform.name} randomDirection: {dodgeValue}");
+
+    //         if(dodgeValue == 1)
+    //         {
+    //             turnValue = 1;
+    //         }
+
+    //         if(dodgeValue == 2)
+    //         {
+    //             turnValue = -1;
+    //         }
+    //     }
+
+    //     // If LEFT empty && RIGHT blocked - go left
+    //     if(leftBlockerCheck.collider == null && rightBlockerCheck.collider != null)
+    //     {
+    //         Debug.Log($"{transform.name} Left side is clear, go left.");
+    //         turnValue = 1;
+    //     }
+
+    //     // If RIGHT empty && LEFT blocked - go right
+    //     if(leftBlockerCheck.collider != null && rightBlockerCheck.collider == null)
+    //     {
+    //         Debug.Log($"{transform.name} Right side is clear, go right.");
+    //         turnValue = -1;
+    //     }
+
+    //     // If BOTH blocked, check if one contains a cow, prioritise the one without a cow
+    //     if(leftBlockerCheck.collider != null && rightBlockerCheck.collider != null)
+    //     {
+    //         Debug.Log($"{transform.name} Both sides blocked, go in the least nasty direction.");
+
+    //         // avoid players first
+    //         if(leftBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent" || rightBlockerCheck.collider.tag == "Opponent")
+    //         {
+    //             if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Opponent"))
+    //             {
+    //                 if(zoneDirectionLocal.x < -0.1f)
+    //                 {
+    //                     turnValue = 1;
+    //                 }
+
+    //                 if(zoneDirectionLocal.x > 0.1f)
+    //                 {
+    //                     turnValue = -1;
+    //                 }
+    //             }
+    //             else if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag != "Player" || rightBlockerCheck.collider.tag != "Opponent"))
+    //             {
+    //                 // turn left
+    //                 turnValue = 1;
+    //             }
+    //             else
+    //             {
+    //                 // turn right
+    //                 turnValue = -1;
+    //             }
+    //         }
+
+    //         // then prioritise avoiding cows if required
+    //         if(leftBlockerCheck.collider.tag == "Cow" || rightBlockerCheck.collider.tag == "Cow")
+    //         {
+    //             if(leftBlockerCheck.collider.tag == "Cow" && rightBlockerCheck.collider.tag == "Cow")
+    //             {
+    //                 if(zoneDirectionLocal.x < -0.1f)
+    //                 {
+    //                     turnValue = 1;
+    //                 }
+
+    //                 if(zoneDirectionLocal.x > 0.1f)
+    //                 {
+    //                     turnValue = -1;
+    //                 }
+    //             }
+    //             else if(leftBlockerCheck.collider.tag == "Cow")
+    //             {
+    //                 // turn left
+    //                 turnValue = 1;
+    //             }
+    //             else
+    //             {
+    //                 // turn right
+    //                 turnValue = -1;
+    //             }
+    //         }
+
+    //         // then prioritise avoiding walls if required
+    //         if(leftBlockerCheck.collider.tag == "Wall" || rightBlockerCheck.collider.tag == "Wall")
+    //         {
+    //             if(leftBlockerCheck.collider.tag == "Wall" && rightBlockerCheck.collider.tag == "Wall")
+    //             {
+    //                 if(zoneDirectionLocal.x < -0.1f)
+    //                 {
+    //                     turnValue = 1;
+    //                 }
+
+    //                 if(zoneDirectionLocal.x > 0.1f)
+    //                 {
+    //                     turnValue = -1;
+    //                 }
+    //             }
+    //             else if(leftBlockerCheck.collider.tag == "Wall")
+    //             {
+    //                 // turn left
+    //                 turnValue = 1;
+    //             }
+    //             else
+    //             {
+    //                 // turn right
+    //                 turnValue = -1;
+    //             }
+    //         }
+    //     }
+    // }
 
     void PlayerAcceleration()
     {
