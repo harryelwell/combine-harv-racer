@@ -19,6 +19,7 @@ public class OpponentManager : MonoBehaviour
     [Header("Player Settings")]
     public float playerSpeed;
     public float turnSpeed;
+    public float maxCornValue;
     public float cornValue; // min 0, max 3 (+0.3 each time you hit corn)
     public float raycastDistance;
 
@@ -117,204 +118,83 @@ public class OpponentManager : MonoBehaviour
 
         //Vector3 rightCastDirection = (castStartPoint.transform.forward + castStartPoint.transform.right).normalized;
 
-        Debug.DrawRay(castStartPoint.transform.position,castStartPoint.transform.forward*raycastDistance,Color.cyan);
-        RaycastHit2D checkpointPathCheck = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance);
+        // Debug.DrawRay(castStartPoint.transform.position,castStartPoint.transform.forward*raycastDistance,Color.cyan);
+        // RaycastHit2D checkpointPathCheck = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance);
         
-        Debug.DrawRay(castFrontLeft.transform.position,castFrontLeft.transform.forward*(raycastDistance*0.8f),Color.cyan);
-        RaycastHit2D checkpointPathCheckL = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance*0.8f);
+        // Debug.DrawRay(castFrontLeft.transform.position,castFrontLeft.transform.forward*(raycastDistance*0.8f),Color.cyan);
+        // RaycastHit2D checkpointPathCheckL = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance*0.8f);
 
-        Debug.DrawRay(castFrontRight.transform.position,castFrontRight.transform.forward*(raycastDistance*0.8f),Color.cyan);
-        RaycastHit2D checkpointPathCheckR = Physics2D.Raycast(castFrontRight.transform.position,castFrontRight.transform.forward,raycastDistance*0.8f);
+        // Debug.DrawRay(castFrontRight.transform.position,castFrontRight.transform.forward*(raycastDistance*0.8f),Color.cyan);
+        // RaycastHit2D checkpointPathCheckR = Physics2D.Raycast(castFrontRight.transform.position,castFrontRight.transform.forward,raycastDistance*0.8f);
 
-        if(checkpointPathCheck.collider != null || checkpointPathCheckL.collider != null || checkpointPathCheckR.collider != null)
-        {            
-            //OldAvoidCollision()
+        // if(checkpointPathCheck.collider != null || checkpointPathCheckL.collider != null || checkpointPathCheckR.collider != null)
+        // {            
+        //     //OldAvoidCollision()
 
-            // Figure out which check got a collision
-            Collider2D obstacle = checkpointPathCheck.collider;
+        //     // Figure out which check got a collision
+        //     Collider2D obstacle = checkpointPathCheck.collider;
 
-            if(checkpointPathCheckL.collider != null)
-            {
-                obstacle = checkpointPathCheckL.collider;
-            }
+        //     if(checkpointPathCheckL.collider != null)
+        //     {
+        //         obstacle = checkpointPathCheckL.collider;
+        //     }
 
-            if(checkpointPathCheckR.collider != null)
-            {
-                obstacle = checkpointPathCheckR.collider;
-            }
+        //     if(checkpointPathCheckR.collider != null)
+        //     {
+        //         obstacle = checkpointPathCheckR.collider;
+        //     }
 
-            if(checkpointPathCheck.collider != null)
-            {
-                obstacle = checkpointPathCheck.collider;
-            }
+        //     if(checkpointPathCheck.collider != null)
+        //     {
+        //         obstacle = checkpointPathCheck.collider;
+        //     }
 
-            if (obstacle != null)
-            {
-                Vector2 vectorToTarget = nearestTargetZone.transform.position - transform.position;
-                vectorToTarget.Normalize();
-                AvoidCollision(vectorToTarget, out vectorToTarget, obstacle);
-            }
+        //     if (obstacle != null)
+        //     {
+        //         Vector2 vectorToTarget = nearestTargetZone.transform.position - transform.position;
+        //         vectorToTarget.Normalize();
+        //         AvoidCollision(vectorToTarget, out vectorToTarget, obstacle);
+        //     }
             
-        }
+        // }
     }
 
-    void AvoidCollision(Vector2 vectorToTarget, out Vector2 newVectorToTarget, Collider2D obstacle)
-    {
-        // ADAPT CODE FROM https://www.youtube.com/watch?v=5SJ6AAI6Wcs&ab_channel=PrettyFlyGames
-
-        Vector2 avoidanceVector = Vector2.zero;
-        
-        // Calculate the reflecting vector if we were to hit the obstacle
-        avoidanceVector = Vector2.Reflect((obstacle.gameObject.transform.position - transform.position).normalized, obstacle.transform.right);
-
-        // Avoidance vector
-        newVectorToTarget = avoidanceVector;
-        newVectorToTarget.Normalize();
-
-        // Draw the avoidance vector
-        Debug.DrawRay(transform.position, avoidanceVector * raycastDistance, Color.green);
-
-        // Log the avoidanceVector
-        Debug.Log($"{transform.name} avoidanceVector.x: {avoidanceVector.x}, avoidanceVector.y: {avoidanceVector.y}");
-
-        // NEXT STEP: Interpret the avoidanceVector into turnValue!
-        turnValue = -avoidanceVector.x;
-    }
-
-    // void OldAvoidCollision()
+    // void AvoidCollision(Vector2 vectorToTarget, out Vector2 newVectorToTarget, Collider2D obstacle)
     // {
-    //     //Debug.Log($"{checkpointPathCheck.collider.name} blocking path to {targetCheckpoint.name}");
+    //     // ADAPT CODE FROM https://www.youtube.com/watch?v=5SJ6AAI6Wcs&ab_channel=PrettyFlyGames
 
-    //     // Check left using raycast
-    //     Debug.DrawRay(castCheckLeft.transform.position,castCheckLeft.transform.forward*(raycastDistance*0.8f),Color.yellow);
-    //     RaycastHit2D leftBlockerCheck = Physics2D.Raycast(castCheckLeft.transform.position,castCheckLeft.transform.forward,raycastDistance*0.8f);
+    //     Vector2 avoidanceVector = Vector2.zero;
+        
+    //     // Calculate the reflecting vector if we were to hit the obstacle
+    //     avoidanceVector = Vector2.Reflect((obstacle.gameObject.transform.position - transform.position).normalized, obstacle.transform.right);
 
-    //     // Check right using raycast
-    //     Debug.DrawRay(castCheckRight.transform.position,castCheckRight.transform.forward*(raycastDistance*0.8f),Color.green);
-    //     RaycastHit2D rightBlockerCheck = Physics2D.Raycast(castCheckRight.transform.position,castCheckRight.transform.forward,raycastDistance*0.8f);
+    //     // Calculate the distance to the target checkpoint
+    //     float distanceToTarget = (nearestTargetZone.transform.position - transform.position).magnitude;
+    //     // The close the harvester gets to the checkpoint, the need to reach the checkpoint increases
+    //     float driveToTargetInfluence = 6.0f / distanceToTarget;
+    //     Debug.Log($"{transform.name} driveToTargetInfluence: {driveToTargetInfluence}");
+    //     // Limit the influence to fixed values between 0.3 and 1
+    //     driveToTargetInfluence = Mathf.Clamp(driveToTargetInfluence, 0.30f, 1.0f);
+    //     Debug.Log($"{transform.name} Clamped driveToTargetInfluence: {driveToTargetInfluence}");
 
-    //     // If BOTH empty - go any direction
-    //     if(leftBlockerCheck.collider == null && rightBlockerCheck.collider == null)
-    //     {
-    //         Debug.Log($"{transform.name} Both sides clear, go either way.");
+    //     // Calculate the competing desire to avoid the obstacle (inverse of the driveToTargetInfluence)
+    //     float avoidanceInfluence = 1.0f - driveToTargetInfluence;
 
-    //         if(dodgeValue == 0)
-    //         {
-    //             dodgeValue = Random.Range(1,3);
-    //         }
-    //         Debug.Log($"{transform.name} randomDirection: {dodgeValue}");
+    //     // Avoidance vector
+    //     newVectorToTarget = vectorToTarget * driveToTargetInfluence + avoidanceVector * avoidanceInfluence;
+    //     newVectorToTarget.Normalize();
 
-    //         if(dodgeValue == 1)
-    //         {
-    //             turnValue = 1;
-    //         }
+    //     // Draw the avoidance vector
+    //     Debug.DrawRay(transform.position, avoidanceVector * raycastDistance, Color.green);
 
-    //         if(dodgeValue == 2)
-    //         {
-    //             turnValue = -1;
-    //         }
-    //     }
+    //     // Draw the route the harvester will actually take in yellow
+    //     Debug.DrawRay(transform.position, newVectorToTarget * raycastDistance, Color.yellow);
 
-    //     // If LEFT empty && RIGHT blocked - go left
-    //     if(leftBlockerCheck.collider == null && rightBlockerCheck.collider != null)
-    //     {
-    //         Debug.Log($"{transform.name} Left side is clear, go left.");
-    //         turnValue = 1;
-    //     }
+    //     // Log the avoidanceVector
+    //     Debug.Log($"{transform.name} avoidanceVector.x: {avoidanceVector.x}, avoidanceVector.y: {avoidanceVector.y}");
 
-    //     // If RIGHT empty && LEFT blocked - go right
-    //     if(leftBlockerCheck.collider != null && rightBlockerCheck.collider == null)
-    //     {
-    //         Debug.Log($"{transform.name} Right side is clear, go right.");
-    //         turnValue = -1;
-    //     }
-
-    //     // If BOTH blocked, check if one contains a cow, prioritise the one without a cow
-    //     if(leftBlockerCheck.collider != null && rightBlockerCheck.collider != null)
-    //     {
-    //         Debug.Log($"{transform.name} Both sides blocked, go in the least nasty direction.");
-
-    //         // avoid players first
-    //         if(leftBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent" || rightBlockerCheck.collider.tag == "Opponent")
-    //         {
-    //             if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag == "Player" || rightBlockerCheck.collider.tag == "Opponent"))
-    //             {
-    //                 if(zoneDirectionLocal.x < -0.1f)
-    //                 {
-    //                     turnValue = 1;
-    //                 }
-
-    //                 if(zoneDirectionLocal.x > 0.1f)
-    //                 {
-    //                     turnValue = -1;
-    //                 }
-    //             }
-    //             else if((leftBlockerCheck.collider.tag == "Player" || leftBlockerCheck.collider.tag == "Opponent") && (rightBlockerCheck.collider.tag != "Player" || rightBlockerCheck.collider.tag != "Opponent"))
-    //             {
-    //                 // turn left
-    //                 turnValue = 1;
-    //             }
-    //             else
-    //             {
-    //                 // turn right
-    //                 turnValue = -1;
-    //             }
-    //         }
-
-    //         // then prioritise avoiding cows if required
-    //         if(leftBlockerCheck.collider.tag == "Cow" || rightBlockerCheck.collider.tag == "Cow")
-    //         {
-    //             if(leftBlockerCheck.collider.tag == "Cow" && rightBlockerCheck.collider.tag == "Cow")
-    //             {
-    //                 if(zoneDirectionLocal.x < -0.1f)
-    //                 {
-    //                     turnValue = 1;
-    //                 }
-
-    //                 if(zoneDirectionLocal.x > 0.1f)
-    //                 {
-    //                     turnValue = -1;
-    //                 }
-    //             }
-    //             else if(leftBlockerCheck.collider.tag == "Cow")
-    //             {
-    //                 // turn left
-    //                 turnValue = 1;
-    //             }
-    //             else
-    //             {
-    //                 // turn right
-    //                 turnValue = -1;
-    //             }
-    //         }
-
-    //         // then prioritise avoiding walls if required
-    //         if(leftBlockerCheck.collider.tag == "Wall" || rightBlockerCheck.collider.tag == "Wall")
-    //         {
-    //             if(leftBlockerCheck.collider.tag == "Wall" && rightBlockerCheck.collider.tag == "Wall")
-    //             {
-    //                 if(zoneDirectionLocal.x < -0.1f)
-    //                 {
-    //                     turnValue = 1;
-    //                 }
-
-    //                 if(zoneDirectionLocal.x > 0.1f)
-    //                 {
-    //                     turnValue = -1;
-    //                 }
-    //             }
-    //             else if(leftBlockerCheck.collider.tag == "Wall")
-    //             {
-    //                 // turn left
-    //                 turnValue = 1;
-    //             }
-    //             else
-    //             {
-    //                 // turn right
-    //                 turnValue = -1;
-    //             }
-    //         }
-    //     }
+    //     // NEXT STEP: Interpret the avoidanceVector into turnValue!
+    //     turnValue = -avoidanceVector.x;
     // }
 
     void PlayerAcceleration()

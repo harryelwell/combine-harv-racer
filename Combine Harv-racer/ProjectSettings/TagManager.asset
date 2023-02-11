@@ -20,6 +20,7 @@ TagManager:
   - CameraLock
   - Opponent
   - Wall
+  - Cow
   layers:
   - Default
   - TransparentFX

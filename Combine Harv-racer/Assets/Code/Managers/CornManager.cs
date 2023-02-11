@@ -72,12 +72,12 @@ public class CornManager : MonoBehaviour
             // Stop any corn growth
             StopAllCoroutines();
 
-            if(cornLevel == 2 && playerManager.cornValue < 4.4f)
+            if(cornLevel == 2 && playerManager.cornValue < playerManager.maxCornValue)
             {
                 playerManager.cornValue += 0.0015f;
             }
 
-            if(cornLevel == 3 && playerManager.cornValue < 4.4f)
+            if(cornLevel == 3 && playerManager.cornValue < playerManager.maxCornValue)
             {
                 playerManager.cornValue += 0.004f;
             }
@@ -96,12 +96,12 @@ public class CornManager : MonoBehaviour
             // Stop any corn growth
             StopAllCoroutines();
 
-            if(cornLevel == 2 && opponentManager.cornValue < 4.4f)
+            if(cornLevel == 2 && opponentManager.cornValue < opponentManager.maxCornValue)
             {
                 opponentManager.cornValue += 0.0015f;
             }
 
-            if(cornLevel == 3 && opponentManager.cornValue < 4.4f)
+            if(cornLevel == 3 && opponentManager.cornValue < opponentManager.maxCornValue)
             {
                 opponentManager.cornValue += 0.004f;
             }

@@ -13,6 +13,7 @@ public class PlayerManager : MonoBehaviour
     [Header("Player Settings")]
     public float playerSpeed;
     public float turnSpeed;
+    public float maxCornValue;
     public float cornValue; // min 0, max 3 (+0.3 each time you hit corn)
     [Header("Gameplay Parameters")]
     public bool movementAllowed;

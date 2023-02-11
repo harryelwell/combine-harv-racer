@@ -4826,7 +4826,7 @@ GameObject:
   - component: {fileID: 7798465815511075692}
   m_Layer: 0
   m_Name: Cow
-  m_TagString: Untagged
+  m_TagString: Cow
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4928,4 +4928,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   assetLibrary: {fileID: 0}
+  soundFXManager: {fileID: 0}
   cowParticle: {fileID: 7798465815419687139}
+  cowZone: {fileID: 0}
+  cowZoneManager: {fileID: 0}
+  cowTriggered: 0

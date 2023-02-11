@@ -99,15 +99,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   player: {fileID: 7301964128830497882}
   playerManager: {fileID: 7301964128830497885}
-  minDistance: 0
-  maxDistance: 2
-  distanceScale: 1
-  lerpSpeed: 1
-  velocity: {x: 0, y: 0, z: 0}
-  motionVector: {x: 0, y: 0, z: 0}
-  motionMagnitude: 0
-  targetPosition: {x: 0, y: 0, z: 0}
-  calculatedPosition: {x: 0, y: 0, z: 0}
+  cameraLock: {fileID: 0}
+  targetGroup: {fileID: 0}
+  targetGroupRadius: 0
+  radiusModifier: 0
 --- !u!1 &7301964128830497882
 GameObject:
   m_ObjectHideFlags: 0
@@ -215,6 +210,7 @@ MonoBehaviour:
   cameraTracker: {fileID: 0}
   playerSpeed: 80
   turnSpeed: 120
+  maxCornValue: 4.4
   cornValue: 0
   movementAllowed: 0
 --- !u!114 &7301964128830497887
