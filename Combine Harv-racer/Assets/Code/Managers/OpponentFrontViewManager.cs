@@ -29,24 +29,29 @@ public class OpponentFrontViewManager : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D col)
     {
-        if(col.tag == "Player")
+        if(opponentManager.targetCheckpointNumber == 1 && opponentManager.lapsComplete <= 0)
         {
-            Debug.Log($"Player entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
-        }
+            if(col.tag == "Cow" || col.tag == "Wall")
+            {
+                //Debug.Log($"Obstacle entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
 
-        if(col.tag == "Opponent")
-        {
-            Debug.Log($"Opponent entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+                // Set the avoidingObstacle bool to true
+                opponentManager.avoidingObstacle = true;
+                // Tell the opponentManager to start avoiding
+                opponentManager.AvoidObstacle();
+            }
         }
-
-        if(col.tag == "Cow")
+        else
         {
-            Debug.Log($"Cow entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
-        }
+            if(col.tag == "Player" || col.tag == "Opponent" || col.tag == "Cow" || col.tag == "Wall")
+            {
+                //Debug.Log($"Obstacle entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
 
-        if(col.tag == "Wall")
-        {
-            Debug.Log($"Wall entered front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+                // Set the avoidingObstacle bool to true
+                opponentManager.avoidingObstacle = true;
+                // Tell the opponentManager to start avoiding
+                opponentManager.AvoidObstacle();
+            }
         }
     }
 
@@ -54,22 +59,22 @@ public class OpponentFrontViewManager : MonoBehaviour
     {
         if(col.tag == "Player")
         {
-            Debug.Log($"Player exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+            //Debug.Log($"Player exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
         }
 
         if(col.tag == "Opponent")
         {
-            Debug.Log($"Opponent exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+            //Debug.Log($"Opponent exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
         }
 
         if(col.tag == "Cow")
         {
-            Debug.Log($"Cow exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+            //Debug.Log($"Cow exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
         }
 
         if(col.tag == "Wall")
         {
-            Debug.Log($"Wall exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
+            //Debug.Log($"Wall exited front view of {transform.parent.transform.name}: {col.gameObject.transform.name}.");
         }
     }
 }

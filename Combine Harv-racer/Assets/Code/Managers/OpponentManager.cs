@@ -8,13 +8,11 @@ public class OpponentManager : MonoBehaviour
     public GameManager gameManager;
     public PlayerActions playerActions;
     public Rigidbody2D playerRigidbody;
-
-    [Header("Casting Objects")]
-    public GameObject castStartPoint;
-    public GameObject castFrontLeft;
-    public GameObject castFrontRight;
-    public GameObject castCheckLeft;
-    public GameObject castCheckRight;
+    public OpponentFrontViewManager frontViewmanager;
+    public OpponentSideViewManager leftViewManager;
+    public OpponentSideViewManager rightViewManager;
+    public GameObject tempTargetLeft;
+    public GameObject tempTargetRight;
 
     [Header("Player Settings")]
     public float playerSpeed;
@@ -27,16 +25,16 @@ public class OpponentManager : MonoBehaviour
     public float accelerationValue;
     public float turnValue;
 
-    public int dodgeValue;
-
     [Header("Gameplay Parameters")]
     public bool movementAllowed;
     public bool needToReverse;
+    public bool avoidingObstacle;
 
     [Header("Checkpoint Tracking")]
     public float targetCheckpointNumber;
     public GameObject targetCheckpoint;
     public GameObject nearestTargetZone;
+    public Vector3 nearestTargetZonePosition;
     public int lapsComplete;
     
     // Start is called before the first frame update
@@ -54,6 +52,7 @@ public class OpponentManager : MonoBehaviour
         }
 
         SetTargetCheckpoint();
+        SetTargetZone();
     }
 
     // Update is called once per frame
@@ -93,109 +92,82 @@ public class OpponentManager : MonoBehaviour
     {
         turnValue = 0;
 
-        // Set a target zone of the current targetCheckpoint
-        SetTargetZone();
+        // Set a target zone of the current targetCheckpoint, as long as we're not currently avoiding an obstacle
+        if(avoidingObstacle == true)
+        {
+            CheckIfObstacleCleared();
+        }
+        else
+        {
+            SetTargetZone();
+            CheckForCorn();
+        }
 
         // Turn towards targetZone
 
-        Vector3 zoneDirectionLocal = transform.InverseTransformPoint(nearestTargetZone.transform.position);
+        Vector3 zoneDirectionLocal = transform.InverseTransformPoint(nearestTargetZonePosition);
 
-                if(zoneDirectionLocal.x < -0.1f)
-                {
-                    //Debug.Log($"{targetCheckpoint.name} is on the left of {transform.name}");
-                    turnValue = 1;
-                }
+        if(zoneDirectionLocal.x < -0.2f)
+        {
+            //Debug.Log($"{targetCheckpoint.name} is on the left of {transform.name}");
+            turnValue = 1;
+        }
 
-                if(zoneDirectionLocal.x > 0.1f)
-                {
-                    //Debug.Log($"{targetCheckpoint.name} is on the right of {transform.name}");
-                    turnValue = -1;
-                }
-
-        // Check for blockers in path
-
-        //Vector3 leftCastDirection = (castStartPoint.transform.forward - castStartPoint.transform.right).normalized;
-
-        //Vector3 rightCastDirection = (castStartPoint.transform.forward + castStartPoint.transform.right).normalized;
-
-        // Debug.DrawRay(castStartPoint.transform.position,castStartPoint.transform.forward*raycastDistance,Color.cyan);
-        // RaycastHit2D checkpointPathCheck = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance);
-        
-        // Debug.DrawRay(castFrontLeft.transform.position,castFrontLeft.transform.forward*(raycastDistance*0.8f),Color.cyan);
-        // RaycastHit2D checkpointPathCheckL = Physics2D.Raycast(castFrontLeft.transform.position,castFrontLeft.transform.forward,raycastDistance*0.8f);
-
-        // Debug.DrawRay(castFrontRight.transform.position,castFrontRight.transform.forward*(raycastDistance*0.8f),Color.cyan);
-        // RaycastHit2D checkpointPathCheckR = Physics2D.Raycast(castFrontRight.transform.position,castFrontRight.transform.forward,raycastDistance*0.8f);
-
-        // if(checkpointPathCheck.collider != null || checkpointPathCheckL.collider != null || checkpointPathCheckR.collider != null)
-        // {            
-        //     //OldAvoidCollision()
-
-        //     // Figure out which check got a collision
-        //     Collider2D obstacle = checkpointPathCheck.collider;
-
-        //     if(checkpointPathCheckL.collider != null)
-        //     {
-        //         obstacle = checkpointPathCheckL.collider;
-        //     }
-
-        //     if(checkpointPathCheckR.collider != null)
-        //     {
-        //         obstacle = checkpointPathCheckR.collider;
-        //     }
-
-        //     if(checkpointPathCheck.collider != null)
-        //     {
-        //         obstacle = checkpointPathCheck.collider;
-        //     }
-
-        //     if (obstacle != null)
-        //     {
-        //         Vector2 vectorToTarget = nearestTargetZone.transform.position - transform.position;
-        //         vectorToTarget.Normalize();
-        //         AvoidCollision(vectorToTarget, out vectorToTarget, obstacle);
-        //     }
-            
-        // }
+        if(zoneDirectionLocal.x > 0.2f)
+        {
+            //Debug.Log($"{targetCheckpoint.name} is on the right of {transform.name}");
+            turnValue = -1;
+        }
     }
 
-    // void AvoidCollision(Vector2 vectorToTarget, out Vector2 newVectorToTarget, Collider2D obstacle)
-    // {
-    //     // ADAPT CODE FROM https://www.youtube.com/watch?v=5SJ6AAI6Wcs&ab_channel=PrettyFlyGames
+    public void AvoidObstacle()
+    {
+        // Debug.Log("Avoiding obstacle!");
 
-    //     Vector2 avoidanceVector = Vector2.zero;
-        
-    //     // Calculate the reflecting vector if we were to hit the obstacle
-    //     avoidanceVector = Vector2.Reflect((obstacle.gameObject.transform.position - transform.position).normalized, obstacle.transform.right);
+        // Check obstacleValue of left and right
+        float obstacleValueLeft = leftViewManager.obstacleValue;
+        float obstacleValueRight = rightViewManager.obstacleValue;
 
-    //     // Calculate the distance to the target checkpoint
-    //     float distanceToTarget = (nearestTargetZone.transform.position - transform.position).magnitude;
-    //     // The close the harvester gets to the checkpoint, the need to reach the checkpoint increases
-    //     float driveToTargetInfluence = 6.0f / distanceToTarget;
-    //     Debug.Log($"{transform.name} driveToTargetInfluence: {driveToTargetInfluence}");
-    //     // Limit the influence to fixed values between 0.3 and 1
-    //     driveToTargetInfluence = Mathf.Clamp(driveToTargetInfluence, 0.30f, 1.0f);
-    //     Debug.Log($"{transform.name} Clamped driveToTargetInfluence: {driveToTargetInfluence}");
+        //Debug.Log($"{transform.name} obstacleValueLeft: {obstacleValueLeft}, obstacleValueRight: {obstacleValueRight}.");
 
-    //     // Calculate the competing desire to avoid the obstacle (inverse of the driveToTargetInfluence)
-    //     float avoidanceInfluence = 1.0f - driveToTargetInfluence;
+        // Whichever has the lowest value, pick that side and set a new temporary nearestTargetZone in that direction (the automated turning will handle the rest)
+        if(obstacleValueLeft == obstacleValueRight)
+        {
+            // Randomly select left or right
+            if(Random.Range(0,2) == 1)
+            {
+                nearestTargetZonePosition = tempTargetLeft.transform.position;
+            }
+            else
+            {
+                nearestTargetZonePosition = tempTargetRight.transform.position;
+            }
+        }
+        else if(obstacleValueLeft < obstacleValueRight)
+        {
+            // Set new target zone on the left
+            nearestTargetZonePosition = tempTargetLeft.transform.position;
+        }
+        else
+        {
+            // Set new target zone on the right
+            nearestTargetZonePosition = tempTargetRight.transform.position;
+        }
 
-    //     // Avoidance vector
-    //     newVectorToTarget = vectorToTarget * driveToTargetInfluence + avoidanceVector * avoidanceInfluence;
-    //     newVectorToTarget.Normalize();
+        // Check whether player has reached the target location, when it has, set avoidingObstacle to false again
+    }
 
-    //     // Draw the avoidance vector
-    //     Debug.DrawRay(transform.position, avoidanceVector * raycastDistance, Color.green);
+    public void CheckIfObstacleCleared()
+    {
+        Debug.Log($"{transform.name} tempTargetPosition: {nearestTargetZonePosition}, currentPosition: {transform.position}.");
 
-    //     // Draw the route the harvester will actually take in yellow
-    //     Debug.DrawRay(transform.position, newVectorToTarget * raycastDistance, Color.yellow);
+        Debug.Log($"{transform.name} Distance to tempTargetPosition: {(nearestTargetZonePosition - transform.position).magnitude}.");
 
-    //     // Log the avoidanceVector
-    //     Debug.Log($"{transform.name} avoidanceVector.x: {avoidanceVector.x}, avoidanceVector.y: {avoidanceVector.y}");
-
-    //     // NEXT STEP: Interpret the avoidanceVector into turnValue!
-    //     turnValue = -avoidanceVector.x;
-    // }
+        if((nearestTargetZonePosition - transform.position).magnitude < 0.1f || (nearestTargetZonePosition - transform.position).magnitude >= 2.7f)
+        {
+            avoidingObstacle = false;
+        }
+    }
 
     void PlayerAcceleration()
     {
@@ -224,7 +196,7 @@ public class OpponentManager : MonoBehaviour
             calculatedTurnValue = -turnValue;
         }
 
-        calculatedTurnValue *= (1 + (cornValue * 0.15f));
+        calculatedTurnValue *= (1 + (cornValue * 0.3f));
 
         transform.Rotate(0,0,calculatedTurnValue * turnSpeed * Time.fixedDeltaTime);
     }
@@ -268,6 +240,41 @@ public class OpponentManager : MonoBehaviour
 
         // output the targetZone
         nearestTargetZone = targetZone;
+        nearestTargetZonePosition = nearestTargetZone.transform.position;
+    }
+
+    void CheckForCorn()
+    {
+        // Check the corn value of front view, left view, right view
+
+        // If left or right view is considerably higher than front view, switch path in the same way the obstacle avoidance stuff works
+    }
+
+    public void CrossedLine()
+    {
+        if(lapsComplete == gameManager.totalLaps - 1)
+        {
+            Debug.Log($"RACE OVER! {transform.name} wins!");
+            
+            // Temp stop gameplay
+            gameManager.raceStarted = false;
+        }
+        else
+        {
+            if(targetCheckpointNumber == 1)
+            {
+                lapsComplete += 1;
+                SetTargetCheckpoint();
+            }
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        if(col.gameObject.tag == "Wall")
+        {
+            StartCoroutine(StopAccelerating(0.7f));
+        }
     }
 
     public IEnumerator CowCollision(GameObject cow)
@@ -299,39 +306,32 @@ public class OpponentManager : MonoBehaviour
             transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,zRotation);
             yield return null;
         }
-
-        //transform.eulerAngles = new Vector3(transform.eulerAngles.x,transform.eulerAngles.y,startRotation);
     }
 
-    // void OnCollisionEnter2D(Collision2D col)
-    // {
-    //     StopCoroutine(StopReversing());
-        
-    //     if(col.gameObject.tag == "Player" || col.gameObject.tag == "Harvester" || col.gameObject.tag == "Opponent" || col.gameObject.tag == "Wall")
-    //     {
-            
-    //         // if raycast forward and see the collision object, do the below
-    //         Debug.DrawLine(castStartPoint.transform.position,castStartPoint.transform.forward*300f,Color.red);
-    //         RaycastHit2D checkInfront = Physics2D.Raycast(castStartPoint.transform.position,castStartPoint.transform.forward,2f);
-
-    //         if(checkInfront.collider != null)
-    //         {
-    //             if(checkInfront.collider.tag == "Player" || checkInfront.collider.tag == "Harvester" || checkInfront.collider.tag == "Opponent" || checkInfront.collider.tag == "Wall")
-    //             {
-    //                 needToReverse = true;
-    //                 Debug.Log($"{transform.name} started reversing.");
-    //                 StartCoroutine(StopReversing());
-    //             }
-    //         } 
-    //     }
-    // }
+    public void StartReversing()
+    {   
+        needToReverse = true;
+        //Debug.Log($"{transform.name} started reversing.");
+        StartCoroutine(StopReversing());
+    }
 
     IEnumerator StopReversing()
     {   
         yield return new WaitForSeconds(1.5f);
 
-        Debug.Log($"{transform.name} stopping reversing.");
+        //Debug.Log($"{transform.name} stopping reversing.");
 
         needToReverse = false;
+        avoidingObstacle = false;
+        SetTargetZone();
+    }
+
+    IEnumerator StopAccelerating(float seconds)
+    {
+        movementAllowed = false;
+        
+        yield return new WaitForSeconds(seconds);
+
+        movementAllowed = true;
     }
 }

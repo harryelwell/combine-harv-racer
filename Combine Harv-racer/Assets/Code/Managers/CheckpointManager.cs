@@ -64,37 +64,22 @@ public class CheckpointManager : MonoBehaviour
             // update checkpoint in opponent manager
             OpponentManager opponentManager = col.gameObject.GetComponent<OpponentManager>();
 
+            if(checkpointNumber == 1)
+            {
+                Debug.Log($"{col.gameObject.name} crossed starting/finish line!");
+                
+                // Do a check thing in game manager to either do nothing (if starting grid), increase the lap count, or win the race
+                opponentManager.CrossedLine();
+            }
+
             if(opponentManager.targetCheckpointNumber == checkpointNumber)
             {
                 opponentManager.SetTargetCheckpoint();
             }
-
-            // if(checkpointNumber == 1 && gameManager.lastCheckpoint == gameManager.checkpointCount)
-            // {
-            //     Debug.Log($"{col.gameObject.name} crossed finish line!");
-                
-            //     // Do a check thing in game manager to either do nothing (if starting grid), increase the lap count, or win the race
-                
-            // }
-            // else
-            // {
-            //     if(checkpointNumber == gameManager.lastCheckpoint + 1)
-            //     {
-            //         gameManager.lastCheckpoint = checkpointNumber;
-            //     }
-            //     else if(checkpointNumber == gameManager.lastCheckpoint - 1)
-            //     {
-            //         Debug.Log($"Wrong way, turn around!");
-            //     }
-            //     else if(checkpointNumber == gameManager.lastCheckpoint)
-            //     {
-            //         Debug.Log("Player has already crossed this checkpoint, do nothing.");
-            //     }
-            //     else
-            //     {
-            //         Debug.Log("Checkpoint is neither next or previous, something has been skipped by accident.");
-            //     }
-            // }
+            else
+            {
+                Debug.Log($"{col.gameObject.name} has crossed Checkpoint {checkpointNumber} when it shouldn't have.");
+            }
         }
     }
 

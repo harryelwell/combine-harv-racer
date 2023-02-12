@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OpponentLeftViewManager : MonoBehaviour
+public class OpponentSideViewManager : MonoBehaviour
 {
     public List<CornManager> cornManagers;
     public float cornValue;
